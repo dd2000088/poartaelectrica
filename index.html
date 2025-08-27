@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Control Poarta</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f9;
+    }
+    h1 {
+      color: #333;
+    }
+    button {
+      font-size: 18px;
+      padding: 10px 20px;
+      margin: 15px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      color: white;
+    }
+    .open { background-color: #4CAF50; }
+    .close { background-color: #f44336; }
+    .stop { background-color: #ff9800; }
+    button:hover { opacity: 0.9; }
+    #status {
+      margin-top: 20px;
+      font-size: 18px;
+      padding: 10px;
+    }
+    #esp-status {
+      display: inline-block;
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      margin-left: 10px;
+    }
+    #esp-status.connected { background-color: green; }
+    #esp-status.disconnected { background-color: red; }
+    ul {
+      list-style: none;
+      padding-left: 0;
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>Control Poarta</h1>
+  <p>Folosește butoanele de mai jos pentru a controla porțile.</p>
+  <button class="open" onclick="sendCommand('/ddeesscchhiiddee')">Deschidere</button>
+  <button class="close" onclick="sendCommand('/iinncchhiiddee')">Închidere</button>
+  <button class="stop" onclick="sendCommand('/oopprreessttee')">Oprire</button>
+
+  <div id="status">
+    Starea ESP32: <span id="esp-status" class="disconnected"></span>
+  </div>
+
+  <div id="mmeessaajj">
+    <h3>Mesaje de stare:</h3>
+    <ul id="message-list"></ul>
+  </div>
+
+  <script>
+    const espUrl = "http://poartameaelectrica.ddns.net";
+    let lastMessage = "";
+    let espOnline = false;
+
+    function sendCommand(command) {
+      if (!espOnline) {
+        console.warn("ESP32 este offline. Comanda nu a fost trimisă.");
+        return;
+      }
+      const url = `${espUrl}${command}`;
+      fetch(url, {
+        method: 'GET',
+        mode: 'no-cors'
+      });
+    }
+
+    function checkConnection() {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 1000); // timeout 1 sec
+
+      fetch(`${espUrl}/ssttaattuutt`, { signal: controller.signal })
+        .then(response => {
+          clearTimeout(timeoutId);
+          if (response.ok) {
+            espOnline = true;
+            document.getElementById("esp-status").className = "connected";
+          } else {
+            espOnline = false;
+            document.getElementById("esp-status").className = "disconnected";
+          }
+        })
+        .catch(() => {
+          clearTimeout(timeoutId);
+          espOnline = false;
+          document.getElementById("esp-status").className = "disconnected";
+        });
+    }
+
+    function getStatusMessages() {
+      fetch(`${espUrl}/mmeessaajj`)
+        .then(response => response.json())
+        .then(data => {
+          let messagesString = JSON.stringify(data.messages);
+          if (messagesString !== lastMessage) {
+            lastMessage = messagesString;
+            const messageList = document.getElementById("message-list");
+            messageList.innerHTML = "";
+            data.messages.forEach(message => {
+              const li = document.createElement("li");
+              li.textContent = message;
+              messageList.appendChild(li);
+            });
+          }
+        })
+        .catch(error => {
+          console.error("❌ Eroare la obținerea mesajelor:", error);
+        });
+    }
+
+    setInterval(() => {
+      checkConnection();
+      getStatusMessages();
+    }, 1000);
+  </script>
+</body>
+</html>
