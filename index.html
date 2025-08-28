@@ -37,11 +37,12 @@
     width: 50%;
     height: 100%;
     background-color: #4CAF50;
-    transition: transform 1s ease;
+    border-right:1px solid #333;
+    transition: transform 2s ease;
   }
 
-  #door-left { left: 0; transform: translateX(0); border-right:1px solid #333; }
-  #door-right { right: 0; transform: translateX(0); border-left:1px solid #333; }
+  #door-left { left: 0; border-right:1px solid #333; }
+  #door-right { right: 0; border-left:1px solid #333; }
 </style>
 </head>
 <body>
@@ -76,8 +77,28 @@ async function sendCommand(command) {
     const response = await fetch(`${proxyUrl}?cmd=${command}`);
     const text = await response.text();
     console.log("Răspuns ESP:", text);
+
+    // Animăm ușile imediat ce comanda e trimisă
+    if (command === "ddeesscchhiiddee" || command === "iinncchhiiddee") {
+      animateDoors(command);
+    }
+
   } catch (err) {
     console.error("Eroare la trimiterea comenzii:", err);
+  }
+}
+
+function animateDoors(action) {
+  const doorLeft = document.getElementById("door-left");
+  const doorRight = document.getElementById("door-right");
+  if (!doorLeft || !doorRight) return;
+
+  if (action === "ddeesscchhiiddee") {
+    doorLeft.style.transform = "translateX(-100%)";
+    doorRight.style.transform = "translateX(100%)";
+  } else if (action === "iinncchhiiddee") {
+    doorLeft.style.transform = "translateX(0)";
+    doorRight.style.transform = "translateX(0)";
   }
 }
 
@@ -106,37 +127,17 @@ async function getStatusMessages() {
         li.textContent = msg;
         messageList.appendChild(li);
       });
-
-      updateGateVisual(data.messages);
     }
   } catch (err) {
     console.error("Eroare la obținerea mesajelor:", err);
   }
 }
 
-function updateGateVisual(messages) {
-  const doorLeft = document.getElementById("door-left");
-  const doorRight = document.getElementById("door-right");
-  if (!doorLeft || !doorRight) return;
-
-  // Poarta deschisă → ușile se duc spre exterior
-  if (messages.some(m => m.toLowerCase().includes("deschisă"))) {
-    doorLeft.style.transform = "translateX(-100%)";
-    doorRight.style.transform = "translateX(100%)";
-  } 
-  // Poarta închisă → ușile se întorc la poziția inițială
-  else if (messages.some(m => m.toLowerCase().includes("închisă"))) {
-    doorLeft.style.transform = "translateX(0)";
-    doorRight.style.transform = "translateX(0)";
-  }
-  // În mișcare → poți adăuga animație intermediară dacă vrei
-}
-
 // Refresh live la fiecare 1 sec
 setInterval(() => {
   checkConnection();
   getStatusMessages();
-}, 1000);
+}, 200);
 </script>
 </body>
 </html>
