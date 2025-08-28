@@ -37,13 +37,20 @@
     top: 0;
     width: 50%;
     height: 100%;
-    background-color: #4CAF50;
+    background-color: #888888; /* ușile gri */
     transition: transform 2s ease;
     box-sizing: border-box;
   }
 
   #door-left { left: 0; }
   #door-right { right: 0; }
+
+  /* Lista mesaje */
+  #mmeessaajj ul {
+    list-style: none;
+    padding-left: 0;
+    margin: 0;
+  }
 </style>
 </head>
 <body>
@@ -79,7 +86,6 @@ async function sendCommand(command) {
     const text = await response.text();
     console.log("Răspuns ESP:", text);
 
-    // Animăm ușile și schimbăm culoarea panoului
     if (command === "ddeesscchhiiddee" || command === "iinncchhiiddee") {
       animateDoors(command);
       updateGateColor(command);
@@ -96,16 +102,16 @@ function animateDoors(action) {
   const doorRight = document.getElementById("door-right");
   if (!doorLeft || !doorRight) return;
 
-  if (action === "ddeesscchhiiddee") {
+  if (action === "ddeesscchhiiddee") { // deschidere
     doorLeft.style.transform = "translateX(-100%)";
     doorRight.style.transform = "translateX(100%)";
-  } else if (action === "iinncchhiiddee") {
+  } else if (action === "iinncchhiiddee") { // închidere
     doorLeft.style.transform = "translateX(0)";
     doorRight.style.transform = "translateX(0)";
   }
 }
 
-// Schimbă culoarea panoului în funcție de stare
+// Schimbă culoarea fundalului panoului
 function updateGateColor(action) {
   const panel = document.getElementById("gate-panel");
   if (!panel) return;
@@ -133,7 +139,7 @@ async function getStatusMessages() {
     if (messagesString !== lastMessage) {
       lastMessage = messagesString;
       const messageList = document.getElementById("message-list");
-      messageList.innerHTML = "";
+      messageList.innerHTML = ""; // șterge toate mesajele vechi
       data.messages.forEach(msg => {
         const li = document.createElement("li");
         li.textContent = msg;
@@ -149,7 +155,7 @@ async function getStatusMessages() {
 setInterval(() => {
   checkConnection();
   getStatusMessages();
-}, 200);
+}, 1000);
 </script>
 </body>
 </html>
