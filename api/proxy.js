@@ -1,13 +1,15 @@
+// File: api/proxy.js
 export default async function handler(req, res) {
   try {
-    // Preia comanda din query string
-    const { path } = req.query;
-    if (!path) {
-      return res.status(400).json({ error: "Lipsește parametrul ?path=" });
+    // Preia comanda din query string: /api/proxy?cmd=ddeesscchhiiddee
+    const { cmd } = req.query;
+
+    if (!cmd) {
+      return res.status(400).json({ error: "Lipsește parametrul cmd" });
     }
 
-    // URL ESP32
-    const espUrl = `http://poartameelectrica.ddns.net/${path}`;
+    // URL corect ESP32
+    const espUrl = `http://poartameaelectrica.ddns.net/${cmd}`;
 
     // Trimite cererea către ESP32
     const response = await fetch(espUrl);
@@ -16,7 +18,7 @@ export default async function handler(req, res) {
     // Returnează răspunsul ESP32
     res.status(200).send(text);
   } catch (error) {
-    console.error(error);
+    console.error("❌ Eroare proxy:", error);
     res.status(500).json({ error: "Eroare la conexiunea cu ESP32" });
   }
 }
