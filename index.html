@@ -1,86 +1,26 @@
 <!DOCTYPE html>
 <html lang="ro">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Control Poarta</title>
-  <style>
-    body { font-family: Arial, sans-serif; text-align:center; margin:0; padding:0; background-color:#f4f4f9; }
-    h1 { color:#333; }
-    button { font-size:18px; padding:10px 20px; margin:15px; border:none; border-radius:5px; cursor:pointer; color:white; }
-    .open { background-color:#4CAF50; }
-    .close { background-color:#f44336; }
-    .stop { background-color:#ff9800; }
-    button:hover { opacity:0.9; }
-    #status { margin-top:20px; font-size:18px; padding:10px; }
-    #esp-status { display:inline-block; width:15px; height:15px; border-radius:50%; margin-left:10px; }
-    #esp-status.connected { background-color:green; }
-    #esp-status.disconnected { background-color:red; }
-    ul { list-style:none; padding-left:0; margin:0; }
-  </style>
+  <meta charset="UTF-8">
+  <title>Control Poartă Electrică</title>
 </head>
 <body>
-  <h1>Control Poarta</h1>
-  <p>Folosește butoanele de mai jos pentru a controla porțile.</p>
-  <button class="open" onclick="sendCommand('/ddeesscchhiiddee')">Deschidere</button>
-  <button class="close" onclick="sendCommand('/iinncchhiiddee')">Închidere</button>
-  <button class="stop" onclick="sendCommand('/oopprreessttee')">Oprire</button>
-
-  <div id="status">
-    Starea ESP32: <span id="esp-status" class="disconnected"></span>
-  </div>
-
-  <div id="mmeessaajj">
-    <h3>Mesaje de stare:</h3>
-    <ul id="message-list"></ul>
-  </div>
+  <h1>Control Poartă</h1>
+  <button onclick="sendCommand('ddeesscchhiiddee')">Deschide</button>
+  <button onclick="sendCommand('iinncchhiiddee')">Închide</button>
+  <button onclick="sendCommand('ssttoopp')">Stop</button>
+  <p id="status"></p>
 
   <script>
-    const proxyUrl = "/api/proxy";
-    let lastMessage = "";
-    let espOnline = false;
-
-    function sendCommand(command) {
-      if (!espOnline) {
-        console.warn("ESP32 este offline. Comanda nu a fost trimisă.");
-        return;
+    async function sendCommand(cmd) {
+      try {
+        const response = await fetch(`/api/proxy?path=${cmd}`);
+        const text = await response.text();
+        document.getElementById("status").innerText = text;
+      } catch (err) {
+        document.getElementById("status").innerText = "Eroare la server!";
       }
-      fetch(`${proxyUrl}${command}`, { method: 'GET' })
-        .catch(err => console.error("Eroare la trimiterea comenzii:", err));
     }
-
-    function checkConnection() {
-      fetch(`${proxyUrl}/ssttaattuutt`)
-        .then(response => {
-          espOnline = response.ok;
-          document.getElementById("esp-status").className = espOnline ? "connected" : "disconnected";
-        })
-        .catch(() => {
-          espOnline = false;
-          document.getElementById("esp-status").className = "disconnected";
-        });
-    }
-
-    function getStatusMessages() {
-      fetch(`${proxyUrl}/mmeessaajj`)
-        .then(res => res.json())
-        .then(data => {
-          let messagesString = JSON.stringify(data.messages);
-          if (messagesString !== lastMessage) {
-            lastMessage = messagesString;
-            const messageList = document.getElementById("message-list");
-            messageList.innerHTML = "";
-            data.messages.forEach(msg => {
-              const li = document.createElement("li");
-              li.textContent = msg;
-              messageList.appendChild(li);
-            });
-          }
-        })
-        .catch(err => console.error("Eroare la obținerea mesajelor:", err));
-    }
-
-    setInterval(() => { checkConnection(); getStatusMessages(); }, 1000);
   </script>
 </body>
 </html>
