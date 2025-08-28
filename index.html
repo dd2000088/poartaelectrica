@@ -19,24 +19,22 @@
     #esp-status.disconnected { background-color:red; }
 
     #gate-panel {
-      margin-top:30px;
-      width:200px;
-      height:200px;
-      border:2px solid #333;
-      margin-left:auto;
-      margin-right:auto;
-      border-radius:10px;
-      position:relative;
-      background-color:#ddd;
-      overflow:hidden;
+      margin: 30px auto;
+      width: 200px;
+      height: 200px;
+      border: 2px solid #333;
+      border-radius: 10px;
+      position: relative;
+      background-color: #ddd;
+      overflow: hidden;
     }
 
     #gate {
-      position:absolute;
-      bottom:0;
-      width:100%;
-      height:100%;
-      background-color:#4CAF50;
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      height: 100%; /* poarta închisă inițial */
+      background-color: #4CAF50;
       transition: height 1s ease;
     }
 
@@ -55,7 +53,6 @@
     Starea ESP32: <span id="esp-status" class="disconnected"></span>
   </div>
 
-  <!-- Panou vizual pentru poartă -->
   <div id="gate-panel">
     <div id="gate"></div>
   </div>
@@ -107,7 +104,6 @@
             messageList.appendChild(li);
           });
 
-          // Animația porții
           updateGateVisual(data.messages);
         }
       } catch (err) {
@@ -117,21 +113,24 @@
 
     function updateGateVisual(messages) {
       const gate = document.getElementById("gate");
-      // Dacă mesajul conține "deschisă" => poarta se ridică
-      if (messages.some(m => m.toLowerCase().includes("deschis"))) {
+      if (!gate) return;
+
+      // Poarta deschisă
+      if (messages.some(m => m.toLowerCase().includes("deschisă"))) {
         gate.style.height = "0%";
       } 
-      // Dacă mesajul conține "închisă" => poarta coboară
-      else if (messages.some(m => m.toLowerCase().includes("închis"))) {
+      // Poarta închisă
+      else if (messages.some(m => m.toLowerCase().includes("închisă"))) {
         gate.style.height = "100%";
-      }
-      // Altfel, nu schimbăm (poate în mișcare)
+      } 
+      // În mișcare sau alt mesaj → păstrează ultima stare
     }
 
+    // Actualizare live la fiecare 1 secundă
     setInterval(() => {
       checkConnection();
       getStatusMessages();
-    }, 200);
+    }, 1000);
   </script>
 </body>
 </html>
