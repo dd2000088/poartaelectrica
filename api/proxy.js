@@ -8,7 +8,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Lipsește parametrul cmd" });
     }
 
-    // URL corect ESP32
+    // URL corect ESP32 prin DDNS
     const espUrl = `http://poartameaelectrica.ddns.net/${cmd}`;
 
     // Trimite cererea către ESP32
