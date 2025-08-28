@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="ro">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Control Poarta</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Control Poartă Live</title>
   <style>
     body { font-family: Arial, sans-serif; text-align:center; margin:0; padding:0; background-color:#f4f4f9; }
     h1 { color:#333; }
@@ -20,7 +20,7 @@
   </style>
 </head>
 <body>
-  <h1>Control Poarta</h1>
+  <h1>Control Poartă Live</h1>
   <p>Folosește butoanele de mai jos pentru a controla porțile.</p>
 
   <button class="open" onclick="sendCommand('ddeesscchhiiddee')">Deschidere</button>
@@ -43,10 +43,7 @@
 
     // Trimite comanda către ESP prin proxy
     async function sendCommand(command) {
-      if (!espOnline) {
-        console.warn("ESP32 este offline. Comanda nu a fost trimisă.");
-        return;
-      }
+      if (!espOnline) return;
       try {
         const response = await fetch(`${proxyUrl}?cmd=${command}`);
         const text = await response.text();
@@ -56,19 +53,19 @@
       }
     }
 
-    // Verifică dacă ESP-ul e online
+    // Verifică conexiunea ESP
     async function checkConnection() {
       try {
-        const response = await fetch(`${proxyUrl}?cmd=ssttaattuutt`);
-        espOnline = response.ok;
+        const res = await fetch(`${proxyUrl}?cmd=ssttaattuutt`);
+        espOnline = res.ok;
         document.getElementById("esp-status").className = espOnline ? "connected" : "disconnected";
-      } catch (err) {
+      } catch {
         espOnline = false;
         document.getElementById("esp-status").className = "disconnected";
       }
     }
 
-    // Preia mesajele de stare
+    // Obține mesajele de stare și actualizează live
     async function getStatusMessages() {
       try {
         const res = await fetch(`${proxyUrl}?cmd=mmeessaajj`);
@@ -89,12 +86,11 @@
       }
     }
 
-    // Actualizare stare și mesaje la fiecare 2 secunde
+    // Refresh automat la fiecare 1 secundă
     setInterval(() => {
       checkConnection();
       getStatusMessages();
-    }, 2000);
-
+    }, 500);
   </script>
 </body>
 </html>
