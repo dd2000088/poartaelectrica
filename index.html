@@ -6,29 +6,58 @@
   <title>Control Poartă Live</title>
   <style>
     body { font-family: Arial, sans-serif; text-align:center; margin:0; padding:0; background-color:#f4f4f9; }
-    h1 { color:#333; }
-    button { font-size:18px; padding:10px 20px; margin:15px; border:none; border-radius:5px; cursor:pointer; color:white; }
+    h1 { color:#333; margin-top:20px; }
+    button { font-size:18px; padding:10px 20px; margin:10px; border:none; border-radius:5px; cursor:pointer; color:white; }
     .open { background-color:#4CAF50; }
     .close { background-color:#f44336; }
     .stop { background-color:#ff9800; }
     button:hover { opacity:0.9; }
+
     #status { margin-top:20px; font-size:18px; padding:10px; }
     #esp-status { display:inline-block; width:15px; height:15px; border-radius:50%; margin-left:10px; }
     #esp-status.connected { background-color:green; }
     #esp-status.disconnected { background-color:red; }
+
+    #gate-panel {
+      margin-top:30px;
+      width:200px;
+      height:200px;
+      border:2px solid #333;
+      margin-left:auto;
+      margin-right:auto;
+      border-radius:10px;
+      position:relative;
+      background-color:#ddd;
+      overflow:hidden;
+    }
+
+    #gate {
+      position:absolute;
+      bottom:0;
+      width:100%;
+      height:100%;
+      background-color:#4CAF50;
+      transition: height 1s ease;
+    }
+
+    #mmeessaajj { margin-top:20px; }
     ul { list-style:none; padding-left:0; margin:0; }
   </style>
 </head>
 <body>
   <h1>Control Poartă Live</h1>
-  <p>Folosește butoanele de mai jos pentru a controla porțile.</p>
 
   <button class="open" onclick="sendCommand('ddeesscchhiiddee')">Deschidere</button>
   <button class="close" onclick="sendCommand('iinncchhiiddee')">Închidere</button>
-  <button class="stop" onclick="sendCommand('oopprreessttee')">Oprire</button>
+  <button class="stop" onclick="sendCommand('oopprreessttee')">Stop</button>
 
   <div id="status">
     Starea ESP32: <span id="esp-status" class="disconnected"></span>
+  </div>
+
+  <!-- Panou vizual pentru poartă -->
+  <div id="gate-panel">
+    <div id="gate"></div>
   </div>
 
   <div id="mmeessaajj">
@@ -41,7 +70,6 @@
     let lastMessage = "";
     let espOnline = false;
 
-    // Trimite comanda către ESP prin proxy
     async function sendCommand(command) {
       if (!espOnline) return;
       try {
@@ -53,7 +81,6 @@
       }
     }
 
-    // Verifică conexiunea ESP
     async function checkConnection() {
       try {
         const res = await fetch(`${proxyUrl}?cmd=ssttaattuutt`);
@@ -65,7 +92,6 @@
       }
     }
 
-    // Obține mesajele de stare și actualizează live
     async function getStatusMessages() {
       try {
         const res = await fetch(`${proxyUrl}?cmd=mmeessaajj`);
@@ -80,17 +106,32 @@
             li.textContent = msg;
             messageList.appendChild(li);
           });
+
+          // Animația porții
+          updateGateVisual(data.messages);
         }
       } catch (err) {
         console.error("Eroare la obținerea mesajelor:", err);
       }
     }
 
-    // Refresh automat la fiecare 1 secundă
+    function updateGateVisual(messages) {
+      const gate = document.getElementById("gate");
+      // Dacă mesajul conține "deschisă" => poarta se ridică
+      if (messages.some(m => m.toLowerCase().includes("deschis"))) {
+        gate.style.height = "0%";
+      } 
+      // Dacă mesajul conține "închisă" => poarta coboară
+      else if (messages.some(m => m.toLowerCase().includes("închis"))) {
+        gate.style.height = "100%";
+      }
+      // Altfel, nu schimbăm (poate în mișcare)
+    }
+
     setInterval(() => {
       checkConnection();
       getStatusMessages();
-    }, 300);
+    }, 200);
   </script>
 </body>
 </html>
