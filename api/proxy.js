@@ -22,4 +22,5 @@ export default async function handler(req, res) {
     console.error("❌ Eroare proxy:", error);
     res.status(500).json({ error: "Eroare la conexiunea cu ESP32" });
   }
+  
 }
