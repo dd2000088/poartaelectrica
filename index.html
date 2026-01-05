@@ -1,117 +1,43 @@
-<!DOCTYPE html>
-<html lang="ro">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Control Poartă</title>
-<style>
-  body { font-family: Arial, sans-serif; text-align:center; margin:0; padding:0; background-color:#f4f4f9; }
-  h1 { color:#333; margin-top:20px; }
-  button { font-size:18px; padding:10px 20px; margin:10px; border:none; border-radius:5px; cursor:pointer; color:white; }
-  .open { background-color:#4CAF50; }
-  .close { background-color:#f44336; }
-  .stop { background-color:#ff9800; }
-  button:hover { opacity:0.9; }
-
-  #status { margin-top:20px; font-size:18px; padding:10px; }
-  #esp-status { display:inline-block; width:15px; height:15px; border-radius:50%; margin-left:10px; }
-  #esp-status.connected { background-color:green; }
-  #esp-status.disconnected { background-color:red; }
-
-  /* Panou poartă */
-  #gate-panel {
-    margin: 30px auto;
-    width: 300px;
-    height: 200px;
-    border: 2px solid #333;
-    border-radius: 10px;
-    position: relative;
-    overflow: hidden;
-    background-color: red; /* inițial închisă */
-    box-sizing: border-box;
-  }
-
-  /* Ușile porții */
-  .door {
-    position: absolute;
-    top: 0;
-    width: 50%;
-    height: 100%;
-    background-color: #888888; /* ușile gri */
-    transition: transform 2s ease;
-    box-sizing: border-box;
-  }
-
-  #door-left { left: 0; }
-  #door-right { right: 0; }
-
-  /* Lista mesaje */
-  #mmeessaajj ul {
-    list-style: none;
-    padding-left: 0;
-    margin: 0;
-  }
-</style>
-</head>
-<body>
-<h1>Control Poartă Live</h1>
-
-<button class="open" onclick="sendCommand('ddeesscchhiiddee')">Deschidere</button>
-<button class="close" onclick="sendCommand('iinncchhiiddee')">Închidere</button>
-<button class="stop" onclick="sendCommand('oopprreessttee')">Stop</button>
-
-<div id="status">
-  Starea ESP32: <span id="esp-status" class="disconnected"></span>
-</div>
-
-<div id="gate-panel">
-  <div id="door-left" class="door"></div>
-  <div id="door-right" class="door"></div>
-</div>
-
-<div id="mmeessaajj">
-  <h3>Mesaje de stare:</h3>
-  <ul id="message-list"></ul>
-</div>
-
 <script>
 const proxyUrl = "/api/proxy";
-let lastMessage = "";
 let espOnline = false;
+const messages = [];  // buffer local pentru mesaje live
 
+// ===================== TRIMITERE COMANDĂ =====================
 async function sendCommand(command) {
   if (!espOnline) return;
+
   try {
     const response = await fetch(`${proxyUrl}?cmd=${command}`);
     const text = await response.text();
     console.log("Răspuns ESP:", text);
 
+    // Animare uși și culoare panou doar pentru deschidere/închidere
     if (command === "ddeesscchhiiddee" || command === "iinncchhiiddee") {
       animateDoors(command);
       updateGateColor(command);
     }
-
   } catch (err) {
     console.error("Eroare la trimiterea comenzii:", err);
   }
 }
 
-// Animarea ușilor lateral
+// ===================== ANIMARE UȘI =====================
 function animateDoors(action) {
   const doorLeft = document.getElementById("door-left");
   const doorRight = document.getElementById("door-right");
   if (!doorLeft || !doorRight) return;
 
-  if (action === "ddeesscchhiiddee") { // deschidere
+  if (action === "ddeesscchhiiddee") {
     doorLeft.style.transform = "translateX(-100%)";
     doorRight.style.transform = "translateX(100%)";
-  } else if (action === "iinncchhiiddee") { // închidere
+  } else if (action === "iinncchhiiddee") {
     doorLeft.style.transform = "translateX(0)";
     doorRight.style.transform = "translateX(0)";
   }
 }
 
-// Schimbă culoarea fundalului panoului
+// ===================== CULOARE PANOU =====================
 function updateGateColor(action) {
   const panel = document.getElementById("gate-panel");
   if (!panel) return;
@@ -120,6 +46,7 @@ function updateGateColor(action) {
   else if (action === "iinncchhiiddee") panel.style.backgroundColor = "red";
 }
 
+// ===================== VERIFICARE CONEXIUNE ESP =====================
 async function checkConnection() {
   try {
     const res = await fetch(`${proxyUrl}?cmd=ssttaattuutt`);
@@ -131,31 +58,35 @@ async function checkConnection() {
   }
 }
 
+// ===================== MESAJ LIVE =====================
 async function getStatusMessages() {
+  if (!espOnline) return;
+
   try {
     const res = await fetch(`${proxyUrl}?cmd=mmeessaajj`);
     const data = await res.json();
-    const messagesString = JSON.stringify(data.messages);
-    if (messagesString !== lastMessage) {
-      lastMessage = messagesString;
-      const messageList = document.getElementById("message-list");
-      messageList.innerHTML = ""; // șterge toate mesajele vechi
-      data.messages.forEach(msg => {
-        const li = document.createElement("li");
-        li.textContent = msg;
-        messageList.appendChild(li);
-      });
-    }
+
+    const newMessage = data.messages[0];
+    if (!newMessage || messages.includes(newMessage)) return;
+
+    // adaugă mesaj nou în buffer și pe pagină
+    messages.push(newMessage);
+    const messageList = document.getElementById("message-list");
+    const li = document.createElement("li");
+    li.textContent = newMessage;
+    messageList.appendChild(li);
+
+    // scroll automat la ultimul mesaj
+    messageList.scrollTop = messageList.scrollHeight;
+
   } catch (err) {
     console.error("Eroare la obținerea mesajelor:", err);
   }
 }
 
-// Refresh live la fiecare 1 sec
+// ===================== POLLING LIVE =====================
 setInterval(() => {
   checkConnection();
   getStatusMessages();
-}, 200);
+}, 200);  // verifică la fiecare 200ms
 </script>
-</body>
-</html>
