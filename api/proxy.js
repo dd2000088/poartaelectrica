@@ -9,7 +9,7 @@ export default async function handler(req, res) {
     }
 
     // URL corect ESP32 prin DDNS
-   const espUrl = `http://poartamea.ddns.net/${cmd}`;
+   const espUrl = `http://poartamea.ddns.net:55000/${cmd}`;
 
 
     // Trimite cererea către ESP32
