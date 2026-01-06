@@ -4,19 +4,50 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Control Poartă</title>
-<style>
-  body { font-family: Arial, sans-serif; text-align:center; margin:0; padding:0; background-color:#f4f4f9; }
-  h1 { color:#333; margin-top:20px; }
-  button { font-size:18px; padding:10px 20px; margin:10px; border:none; border-radius:5px; cursor:pointer; color:white; }
-  .open { background-color:#4CAF50; }
-  .close { background-color:#f44336; }
-  .stop { background-color:#ff9800; }
-  button:hover { opacity:0.9; }
 
-  #status { margin-top:20px; font-size:18px; padding:10px; }
-  #esp-status { display:inline-block; width:15px; height:15px; border-radius:50%; margin-left:10px; }
-  #esp-status.connected { background-color:green; }
-  #esp-status.disconnected { background-color:red; }
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f9;
+  }
+
+  h1 {
+    margin-top: 20px;
+    color: #333;
+  }
+
+  button {
+    font-size: 18px;
+    padding: 10px 20px;
+    margin: 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    color: white;
+  }
+
+  .open { background-color: #4CAF50; }
+  .close { background-color: #f44336; }
+  .stop { background-color: #ff9800; }
+
+  #status {
+    margin-top: 20px;
+    font-size: 18px;
+  }
+
+  #esp-status {
+    display: inline-block;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    margin-left: 10px;
+  }
+
+  #esp-status.connected { background-color: green; }
+  #esp-status.disconnected { background-color: red; }
 
   #gate-panel {
     margin: 30px auto;
@@ -27,7 +58,6 @@
     position: relative;
     overflow: hidden;
     background-color: red;
-    box-sizing: border-box;
   }
 
   .door {
@@ -35,22 +65,22 @@
     top: 0;
     width: 50%;
     height: 100%;
-    background-color: #888888;
+    background-color: #888;
     transition: transform 2s ease;
-    box-sizing: border-box;
   }
 
   #door-left { left: 0; }
   #door-right { right: 0; }
 
-  #mmeessaajj ul {
+  #message-list {
     list-style: none;
-    padding-left: 0;
-    margin: 0;
+    padding: 0;
   }
 </style>
 </head>
+
 <body>
+
 <h1>Control Poartă Live</h1>
 
 <button class="open" onclick="sendCommand('ddeesscchhiiddee')">Deschidere</button>
@@ -58,7 +88,8 @@
 <button class="stop" onclick="sendCommand('oopprreessttee')">Stop</button>
 
 <div id="status">
-  Starea ESP32: <span id="esp-status" class="disconnected"></span>
+  Stare ESP32:
+  <span id="esp-status" class="disconnected"></span>
 </div>
 
 <div id="gate-panel">
@@ -66,10 +97,8 @@
   <div id="door-right" class="door"></div>
 </div>
 
-<div id="mmeessaajj">
-  <h3>Mesaje de stare:</h3>
-  <ul id="message-list"></ul>
-</div>
+<h3>Mesaje de stare</h3>
+<ul id="message-list"></ul>
 
 <script>
 const proxyUrl = "/api/proxy";
@@ -81,82 +110,94 @@ async function sendCommand(command) {
   if (!espOnline) return;
 
   try {
-    const response = await fetch(`${proxyUrl}?cmd=${command}`);
-    const text = await response.text();
-    console.log("Răspuns ESP:", text);
-
-    if (command === "ddeesscchhiiddee" || command === "iinncchhiiddee") {
-      animateDoors(command);
-      updateGateColor(command);
-    }
+    await fetch(`${proxyUrl}?cmd=${command}`);
   } catch (err) {
-    console.error("Eroare la trimiterea comenzii:", err);
+    console.error("Eroare trimitere comandă:", err);
   }
 }
 
-// ===================== ANIMARE UȘI =====================
+// ===================== ANIMAȚIE UȘI =====================
 function animateDoors(action) {
-  const doorLeft = document.getElementById("door-left");
-  const doorRight = document.getElementById("door-right");
-  if (!doorLeft || !doorRight) return;
+  const left = document.getElementById("door-left");
+  const right = document.getElementById("door-right");
 
-  if (action === "ddeesscchhiiddee") {
-    doorLeft.style.transform = "translateX(-100%)";
-    doorRight.style.transform = "translateX(100%)";
-  } else if (action === "iinncchhiiddee") {
-    doorLeft.style.transform = "translateX(0)";
-    doorRight.style.transform = "translateX(0)";
+  if (action === "open") {
+    left.style.transform = "translateX(-100%)";
+    right.style.transform = "translateX(100%)";
+  }
+
+  if (action === "close") {
+    left.style.transform = "translateX(0)";
+    right.style.transform = "translateX(0)";
   }
 }
 
-// ===================== CULOARE PANOU =====================
-function updateGateColor(action) {
+// ===================== CULOARE POARTĂ =====================
+function updateGateColor(state) {
   const panel = document.getElementById("gate-panel");
-  if (!panel) return;
 
-  if (action === "ddeesscchhiiddee") panel.style.backgroundColor = "green";
-  else if (action === "iinncchhiiddee") panel.style.backgroundColor = "red";
+  if (state === "open") panel.style.backgroundColor = "green";
+  if (state === "close") panel.style.backgroundColor = "red";
 }
 
-// ===================== VERIFICARE CONEXIUNE ESP =====================
+// ===================== CONEXIUNE ESP =====================
 async function checkConnection() {
-  const statusEl = document.getElementById("esp-status");
-  if (!statusEl) return;
+  const status = document.getElementById("esp-status");
 
   try {
     const res = await fetch(`${proxyUrl}?cmd=ssttaattuutt`);
     espOnline = res.ok;
-    statusEl.className = espOnline ? "connected" : "disconnected";
+    status.className = espOnline ? "connected" : "disconnected";
   } catch {
     espOnline = false;
-    statusEl.className = "disconnected";
+    status.className = "disconnected";
   }
 }
 
-// ===================== MESAJ LIVE =====================
+// ===================== MESAJ LIVE + LOGICĂ REALĂ =====================
 async function getStatusMessages() {
   if (!espOnline) return;
 
   try {
     const res = await fetch(`${proxyUrl}?cmd=mmeessaajj`);
     const data = await res.json();
-    const newMessage = data.messages[0];
+    const msg = data.messages[0];
 
-    if (!newMessage || newMessage === lastMessage) return;
+    if (!msg || msg === lastMessage) return;
+    lastMessage = msg;
 
-    lastMessage = newMessage;
-    const messageList = document.getElementById("message-list");
-    messageList.innerHTML = ""; // șterge mesajul anterior
+    // afișare mesaj
+    const list = document.getElementById("message-list");
+    list.innerHTML = "";
     const li = document.createElement("li");
-    li.textContent = newMessage;
-    messageList.appendChild(li);
+    li.textContent = msg;
+    list.appendChild(li);
+
+    // 🔥 UI reacționează DOAR la stare reală 🔥
+    if (msg === "DESCHIDERE_IN_CURS") {
+      animateDoors("open");
+      updateGateColor("open");
+    }
+
+    if (msg === "INCHIDERE_IN_CURS") {
+      animateDoors("close");
+      updateGateColor("close");
+    }
+
+    if (msg === "DESCHISA_COMPLET") {
+      updateGateColor("open");
+    }
+
+    if (msg === "INCHISA_COMPLET") {
+      updateGateColor("close");
+    }
 
   } catch (err) {
-    console.error("Eroare la obținerea mesajelor:", err);
+    console.error("Eroare mesaje:", err);
   }
 }
 
-// ===================== POLLING LIVE =====================
+// ===================== POLLING =====================
 setInterval(() => {
   checkConnection();
   getStatusMessages();
