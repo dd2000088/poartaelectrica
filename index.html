@@ -66,7 +66,11 @@
     width: 50%;
     height: 100%;
     background-color: #888;
+
+    /* 🔴 CE LIPSEA */
+    transform: translateX(0);
     transition: transform 2s ease;
+    will-change: transform;
   }
 
   #door-left { left: 0; }
@@ -154,7 +158,7 @@ async function checkConnection() {
   }
 }
 
-// ===================== MESAJ LIVE + LOGICĂ REALĂ =====================
+// ===================== MESAJ LIVE =====================
 async function getStatusMessages() {
   if (!espOnline) return;
 
@@ -166,14 +170,12 @@ async function getStatusMessages() {
     if (!msg || msg === lastMessage) return;
     lastMessage = msg;
 
-    // afișare mesaj
     const list = document.getElementById("message-list");
     list.innerHTML = "";
     const li = document.createElement("li");
     li.textContent = msg;
     list.appendChild(li);
 
-    // 🔥 UI reacționează DOAR la stare reală 🔥
     if (msg === "DESCHIDERE_IN_CURS") {
       animateDoors("open");
       updateGateColor("open");
@@ -184,13 +186,8 @@ async function getStatusMessages() {
       updateGateColor("close");
     }
 
-    if (msg === "DESCHISA_COMPLET") {
-      updateGateColor("open");
-    }
-
-    if (msg === "INCHISA_COMPLET") {
-      updateGateColor("close");
-    }
+    if (msg === "DESCHISA_COMPLET") updateGateColor("open");
+    if (msg === "INCHISA_COMPLET") updateGateColor("close");
 
   } catch (err) {
     console.error("Eroare mesaje:", err);
